@@ -25,18 +25,26 @@ public class PickContactPlugin extends CordovaPlugin {
         this.callbackContext = callbackContext;
 	    this.context = cordova.getActivity().getApplicationContext();
 
-		if (action.equals("chooseContact")) {
-            Intent intent = new Intent(Intent.ACTION_PICK,
-                     ContactsContract.CommonDataKinds.Phone.CONTENT_URI);
-            cordova.startActivityForResult(this, intent, CHOOSE_CONTACT);
+		if (!action.equals("chooseContact"))
+		    return false;
 
-            PluginResult r = new PluginResult(PluginResult.Status.NO_RESULT);
-            r.setKeepCallback(true);
-            callbackContext.sendPluginResult(r);
-            return true;
-		}
+        Intent intent = new Intent(Intent.ACTION_PICK, kindFrom(data));
+        cordova.startActivityForResult(this, intent, CHOOSE_CONTACT);
 
-		return false;
+        PluginResult r = new PluginResult(PluginResult.Status.NO_RESULT);
+        r.setKeepCallback(true);
+        callbackContext.sendPluginResult(r);
+        return true;
+	}
+
+	private Uri kindFrom(JSONArray data) {
+	    try {
+    	    return data.length() == 1 && data.getString(0).equals("email") ?
+                ContactsContract.CommonDataKinds.Email.CONTENT_URI :
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
+        } catch (Exception x) {
+            return ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
+        }
 	}
 
     @Override
@@ -49,69 +57,11 @@ public class PickContactPlugin extends CordovaPlugin {
 
             if (c.moveToFirst()) {
                 try {
-					String contactId = c.getString(c.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID));
-                    String displayName = c.getString(c.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));				
-
-					String nameFormated = c.getString(c.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME));
-					String nameFamily = c.getString(c.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME));
-					String nameGiven = c.getString(c.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME));
-					String nameMiddle = c.getString(c.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME));
-
-					String phoneNumber = "";
-                    if (Integer.parseInt(c.getString(c.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER))) > 0) {
-                        String query = ContactsContract.CommonDataKinds.Phone.CONTACT_ID;
-                        Cursor phoneCursor = resolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,
-                                ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
-                                new String[]{ contactId }, null);
-                        phoneCursor.moveToFirst();
-                        phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
-                        phoneCursor.close();
-                    }
-					
-					String email = "";
-					Cursor emailCur = context.getContentResolver().query(ContactsContract.CommonDataKinds.Email.CONTENT_URI, null, ContactsContract.CommonDataKinds.Email.CONTACT_ID + " = ?", new String[]{contactId}, null);
-					if(emailCur.getCount()>0) {
-						while (emailCur.moveToNext())
-							email = emailCur.getString(emailCur.getColumnIndex(ContactsContract.CommonDataKinds.Email.DATA));
-					}
-					emailCur.close();
-					
-					String addressFormatted = "";
-					String addressStreetAddress = "";
-					String addressLocality = "";
-					String addressRegion = "";
-					String addressPostalcode = "";
-					String addressCountry = "";
-					Cursor addressCur = context.getContentResolver().query(ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_URI, null, ContactsContract.CommonDataKinds.StructuredPostal.CONTACT_ID + " = ?", new String[]{contactId}, null);
-					if(addressCur.getCount()>0) {
-						while (addressCur.moveToNext()) {
-							addressFormatted = addressCur.getString(addressCur.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS));
-							addressStreetAddress = addressCur.getString(addressCur.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.STREET));
-							addressLocality = addressCur.getString(addressCur.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.CITY));
-							addressRegion = addressCur.getString(addressCur.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.REGION));
-							addressPostalcode = addressCur.getString(addressCur.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.POSTCODE));
-							addressCountry = addressCur.getString(addressCur.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.COUNTRY));
-							}
-					}
-					addressCur.close();
-					
+                    String displayName = c.getString(c.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
+					String selectedValue = c.getString(c.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME));
                     JSONObject contact = new JSONObject();
-					contact.put("firstName", nameGiven);
-					contact.put("lastName", nameFamily);
 					contact.put("displayName", displayName);
-					contact.put("nameFormated", nameFormated);
-					contact.put("nameMiddle", nameMiddle);
-					contact.put("phoneNr", phoneNumber);
-					contact.put("emailAddress", email);					
-					contact.put("address", addressFormatted);
-					contact.put("street", addressStreetAddress);
-					contact.put("city", addressLocality);
-					contact.put("region", addressRegion);
-					contact.put("zipcode", addressPostalcode);
-					contact.put("country", addressCountry);
-					
-					// added `contactId` as suggested by aiksiang
-					contact.put("contactId", contactId);
+					contact.put("selectedValue", selectedValue);
                     callbackContext.success(contact);
 
                 } catch (Exception e) {
