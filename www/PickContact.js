@@ -4,8 +4,8 @@
 var PickContact = function(){};
 
 
-PickContact.prototype.chooseContact = function(success, failure){
-    cordova.exec(success, failure, "PickContact", "chooseContact", []);
+PickContact.prototype.chooseContact = function(success, failure, type){
+    cordova.exec(success, failure, "PickContact", "chooseContact", [type]);
 };
 
 // Plug in to Cordova
