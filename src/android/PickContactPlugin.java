@@ -17,12 +17,7 @@ public class PickContactPlugin extends CordovaPlugin {
 
     private Context context;
     private CallbackContext callbackContext;
-    private volatile boolean nastyRaceHack = false;
-        // When an ActivityNotFoundException is thrown by startActivityForResult
-        // sometimes callbackContext.error() is passed the exception message,
-        // and sometimes onActivityResult() is being invoked with RESULT_CANCELLED.
-        // At least that's what I think is happening.
-        
+
     private static final int CHOOSE_CONTACT = 1;
 
     @Override
@@ -34,13 +29,20 @@ public class PickContactPlugin extends CordovaPlugin {
             return false;
 
         Intent intent = new Intent(Intent.ACTION_PICK, kindFrom(data));
+        if (!canHandle(intent)) {
+            callbackContext.error("No activity found");
+            return true;
+        }
         cordova.startActivityForResult(this, intent, CHOOSE_CONTACT);
-        nastyRaceHack = true;
 
         PluginResult r = new PluginResult(PluginResult.Status.NO_RESULT);
         r.setKeepCallback(true);
         callbackContext.sendPluginResult(r);
         return true;
+    }
+
+    private boolean canHandle(Intent intent) {
+        return intent.resolveActivity(context.getPackageManager()) != null;
     }
 
     private Uri kindFrom(JSONArray data) {
@@ -85,10 +87,7 @@ public class PickContactPlugin extends CordovaPlugin {
             c.close();
 
         } else if (resultCode == Activity.RESULT_CANCELED) {
-            if (nastyRaceHack)
-                callbackContext.error("No contact was selected.");
-            else
-                callbackContext.error("No activity found");
+            callbackContext.error("No contact was selected.");
         }
     }
 
