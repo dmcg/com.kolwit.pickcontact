@@ -57,7 +57,7 @@
 - (void)peoplePickerNavigationControllerDidCancel:(ABPeoplePickerNavigationController *)peoplePicker{
     [self.viewController dismissViewControllerAnimated:YES completion:nil];
     [super writeJavascript:[[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
-                                                              messageAsString:@"PickContact abort"]
+                                                              messageAsString:@"No contact was selected"]
                                             toErrorCallbackString:self.callbackID]];
 }
 
