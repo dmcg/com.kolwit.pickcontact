@@ -44,8 +44,10 @@
     [contact setObject:displayName forKey: @"displayName"];
     [contact setObject:phoneNumber forKey: @"selectedValue"];
 
-    [super writeJavascript:[[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:contact] toSuccessCallbackString:self.callbackID]];
-    [self.viewController dismissViewControllerAnimated:YES completion:nil];
+    [self.viewController dismissViewControllerAnimated:YES completion:
+     ^{
+         [super writeJavascript:[[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:contact] toSuccessCallbackString:self.callbackID]];
+     }];
     return NO;
 }
 
@@ -55,10 +57,11 @@
 }
 
 - (void)peoplePickerNavigationControllerDidCancel:(ABPeoplePickerNavigationController *)peoplePicker{
-    [self.viewController dismissViewControllerAnimated:YES completion:nil];
-    [super writeJavascript:[[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
-                                                              messageAsString:@"No contact was selected"]
-                                            toErrorCallbackString:self.callbackID]];
+    [self.viewController dismissViewControllerAnimated:YES completion:^{
+        [super writeJavascript:[[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
+                                                  messageAsString:@"No contact was selected"]
+                                toErrorCallbackString:self.callbackID]];
+    }];
 }
 
 @end
